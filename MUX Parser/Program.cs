@@ -34,26 +34,13 @@ namespace MUX_Parser
                 multiLine = !workLine.EndsWith("\\0Dh");
             }
 
-            DecodeAISMessage("B3`nuGP0?85EAJ7IPNlbswd5oP06");
+            for (int i = 0; i < parsedLines.Count; i++)
+                if (parsedLines[i].Contains("!AIVDO"))
+                    parsedLines[i] += $" - Decoded: {new AISDecode().DecodeAISMessage(parsedLines[i])}";
 
             System.IO.File.WriteAllLines("c:\\temp\\muxlog-fixed.txt", parsedLines);
         }
 
-        static string DecodeAISMessage(string message)
-        {
-            var chars = message.ToCharArray();
-            var payload = new List<int>();
 
-            foreach (var c in chars)
-            {
-                int decimalValue = (int)c - 48;
-                if (decimalValue > 40)
-                    decimalValue -= 8;
-
-                payload.Add(decimalValue);
-            }
-
-            return string.Empty;
-        }
     }
 }
