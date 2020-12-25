@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace MUX_Parser
 {
@@ -7,36 +8,27 @@ namespace MUX_Parser
     {
         static void Main(string[] args)
         {
-            var lines = System.IO.File.ReadAllLines("c:\\temp\\muxlog.txt");
+            var lines = System.IO.File.ReadAllText("c:\\temp\\muxlog.txt");
 
-            var lineDate = string.Empty;
-            var lineData = string.Empty;
+            var dataLines = new Regex("(?'MessageTime'\\[\\d{1,2}\\-\\d{1,2}\\-\\d{4} \\d{2}:\\d{2}:\\d{2}\\]\\s)?[$!](?'MessageType'[A-Z]{5}).*?(?>\\\\0Dh|\\\\0Ah){1,2}", RegexOptions.Singleline);
+            var cleanup = new Regex("(\\[\\d{1,2}\\-\\d{1,2}\\-\\d{4} \\d{2}:\\d{2}:\\d{2}\\] |\\\\0Dh|\\\\0Ah|\\n|\\r)");
+            var matchedLines = dataLines.Matches(lines);
             var parsedLines = new List<string>();
-            var multiLine = false;
+            var lastMessageTime = string.Empty;
 
-            foreach (var line in lines)
+            foreach (Match m in matchedLines)
             {
-                var workLine = line.Replace("\\0Ah", "");
+                if (m.Groups["MessageTime"].Value != string.Empty)
+                    lastMessageTime = m.Groups["MessageTime"].Value;
 
-                lineDate = workLine.Substring(0, 20);
-                lineData = workLine.Substring(21);
 
-                var records = lineData.Split("\\0Dh",StringSplitOptions.RemoveEmptyEntries);
+                var cleanedUpRow = cleanup.Replace(m.Value, string.Empty);
 
-                for (var i = 0; i < records.Length; i++)
-                {
-                    if (i == 0 && multiLine)
-                        parsedLines[^1] = parsedLines[^1] + records[i];
-                    else
-                        parsedLines.Add($"{lineDate} {records[i]}");
-                }
+                if (m.Groups["MessageType"].Value == "AIVDO")
+                    cleanedUpRow += $" *** DECODED *** {new AISDecode().DecodeAISMessage(cleanedUpRow)}";
 
-                multiLine = !workLine.EndsWith("\\0Dh");
+                parsedLines.Add($"{lastMessageTime}{cleanedUpRow}");
             }
-
-            for (int i = 0; i < parsedLines.Count; i++)
-                if (parsedLines[i].Contains("!AIVDO"))
-                    parsedLines[i] += $" - Decoded: {new AISDecode().DecodeAISMessage(parsedLines[i])}";
 
             System.IO.File.WriteAllLines("c:\\temp\\muxlog-fixed.txt", parsedLines);
         }
