@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MUX Parser": {
+      "commandName": "Project",
+      "commandLineArgs": "-in:c:\\temp\\muxlog.txt -out:c:\\temp\\muxlog-fixed.txt -filter:AIVDO,GPGGA,GPRMC,GPGLL -aisdecode:true"
+    }
+  }
+}
